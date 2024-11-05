@@ -101,7 +101,7 @@ void enable_servo(int pin);						// enable servo at the specified pin
 int analog_et(int pin);							// get the 10-bit analog value of a sensor on the specified pin
 int digital(int pin);							// get the digital value of a sensor on the specified pin
 unsigned long systime();						// get the system time
-void set_servo_position(int pin, int position, float delay_seconds); // set a servo at the specified pin to the specified position
+void set_servo_position(int pin, int position); // set a servo at the specified pin to the specified position
 
 // *** Variable Definitions *** //
 
@@ -154,7 +154,7 @@ int main()
            if(search_snapshot(0))
             {
                 stop();
-				set_servo_position(2, 180, .25);
+				set_servo_position(2, 180,);
                 //continue;
             }
             else
