@@ -47,6 +47,7 @@ Revisions:	    Earlier version (2018) and revisions (2023) by Nick Livingston
 
 #define RIGHT_MOTOR_PIN 0
 #define LEFT_MOTOR_PIN 1 // servos
+#define GRIP_MOTOR_PIN 2 // Gripper
 
 // *** Define a new kind of variable type called "behavior" that contains properties for type (indexing definitions above), rank, and an active/inactive boolean *** //
 typedef struct behavior{
@@ -100,7 +101,7 @@ void enable_servo(int pin);						// enable servo at the specified pin
 int analog_et(int pin);							// get the 10-bit analog value of a sensor on the specified pin
 int digital(int pin);							// get the digital value of a sensor on the specified pin
 unsigned long systime();						// get the system time
-void set_servo_position(int pin, int position); // set a servo at the specified pin to the specified position
+void set_servo_position(int pin, int position, float delay_seconds); // set a servo at the specified pin to the specified position
 
 // *** Variable Definitions *** //
 
@@ -153,6 +154,7 @@ int main()
            if(search_snapshot(0))
             {
                 stop();
+				set_servo_position(2, 180, .25);
                 //continue;
             }
             else
@@ -267,6 +269,11 @@ void cruise_arc()
 void stop()
 {
 	drive(0.0, 0.0, 0.25);
+}
+/******************************************************/
+void grip()
+{
+	set_servo_position(2, 180, .25);
 }
 /******************************************************/
 void escape_front()
