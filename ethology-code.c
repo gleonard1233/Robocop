@@ -47,7 +47,9 @@ Revisions:	    Earlier version (2018) and revisions (2023) by Nick Livingston
 
 #define RIGHT_MOTOR_PIN 0
 #define LEFT_MOTOR_PIN 1 // servos
-#define GRIP_MOTOR_PIN 2 // Gripper
+#define GRIPPER_PIN 2
+#define GRIPPER_OPEN_POSITION 0
+#define GRIPPER_CLOSED_POSITION 1023
 
 // *** Define a new kind of variable type called "behavior" that contains properties for type (indexing definitions above), rank, and an active/inactive boolean *** //
 typedef struct behavior{
@@ -148,26 +150,22 @@ int main()
 	
 	initialize_camera(); //initialize the camera
 	
-	while(true){ //this is an infinite loop (true is always true)
-		if(timer_elapsed()){
-            read_sensors(); //read all sensors and set global variables of their readouts
-           if(search_snapshot(0))
-            {
+    while (true) {
+        if (timer_elapsed()) {
+            read_sensors();
+            if (search_snapshot(0)) {
                 stop();
-				set_servo_position(2, 180,);
-                //continue;
-            }
-            else
-            {
+                set_servo_position(GRIPPER_PIN, GRIPPER_OPEN_POSITION);
+                msleep(1000);
+                set_servo_position(GRIPPER_PIN, GRIPPER_CLOSED_POSITION);
+
+            } else {
                 cruise_straight();
-                //continue;
             }
         }
-    }//end while true
-	
-	return 0; //due to infinite while loop, we will never get here
+    }
+    return 0;
 }
-
 //========================================//
 //===============PERCEPTION===============//
 //========================================//
@@ -269,11 +267,6 @@ void cruise_arc()
 void stop()
 {
 	drive(0.0, 0.0, 0.25);
-}
-/******************************************************/
-void grip()
-{
-	set_servo_position(2, 180, .25);
 }
 /******************************************************/
 void escape_front()
