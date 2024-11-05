@@ -157,10 +157,11 @@ void initialize_camera() {
 bool search_snapshot(int channel) {
     camera_update();
     msleep(10);
+    centroid = get_object_centroid(channel, 0);
     rectangle object_bounding_box = get_object_bbox(channel, 0);
     if (object_bounding_box.width * object_bounding_box.height != 0) {
-        printf("Object detected!\n");
-        return true;
+        printf(centroid.y);
+        return centroid.y;
     }
     return false;
 }
