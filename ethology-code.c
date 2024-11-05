@@ -1,4 +1,3 @@
-
 /*
 Vassar Cognitive Science - Robot Ethology
 
@@ -137,6 +136,7 @@ int hierarchy_length; //set in main function based on number of elements in subs
 //==================================//
 //===============MAIN===============//
 //==================================//
+
 int main() 
 {
 	hierarchy_length = sizeof(subsumption_hierarchy) / sizeof(behavior); //set this variable once for loopin trhough the hierarchy
@@ -145,75 +145,55 @@ int main()
 	enable_servo(RIGHT_MOTOR_PIN);
 	drive(0.0,0.0,1.0);
 	
-    camera_load_config("blockz.conf");
-    camera_open();
-    
-    while (true){
-        // get the bounding box of the largest object in
-        // channel 0 (the red channel)
-        rectangle object_bounding_box = get_object_bbox(0, 0);
-        if (object_bounding_box.width * object_bounding_box.height != 0){
-            printf("red object seen!");
-            
-           	cruise_straight();
-            msleep(100);
-            stop();
-            
+	initialize_camera(); //initialize the camera
+	
+	while(true){ //this is an infinite loop (true is always true)
+		if(timer_elapsed()){
+            read_sensors(); //read all sensors and set global variables of their readouts
+           if(search_snapshot(0))
+            {
+                stop();
+                //continue;
+            }
+            else
+            {
+                cruise_straight();
+                //continue;
+            }
         }
-
-        // update the camera
-        camera_update();
-        msleep(10);
-    }
-
-    camera_close();  // cleanup the camera
+    }//end while true
 	
 	return 0; //due to infinite while loop, we will never get here
 }
 
-/*
-int main() {
-    
-    while(true){
-    enable_servo(LEFT_MOTOR_PIN);	//initialize both motors and set speed to zero
-	enable_servo(RIGHT_MOTOR_PIN);
-	drive(0.0,0.0,1.0);
-
-   	 while(1 == 1){
-     camera_load_config("blockz.conf");
-     camera_open();
-     
-     // wait a little and update the camera
-     int i = 0;
-     for (i = 0; i < 10; i++){
-         camera_update();
-         msleep(10);
-     }
- 
-     int red_object_seen = 0;
-     while (!red_object_seen){
-         // get the bounding box of the largest object in
-         // channel 0 (the red channel)
-         rectangle object_bounding_box = get_object_bbox(0, 0);
-         if (object_bounding_box.width * object_bounding_box.height != 0){
-             printf("red object seen!");
-             avoid();
-             red_object_seen = 1;
-         }
- 
-         // update the camera
-         camera_update();
-         msleep(10);
-     }
- 
-     camera_close();  // cleanup the camera
-     }
-    }
-}
-*/
 //========================================//
 //===============PERCEPTION===============//
 //========================================//
+
+
+void initialize_camera() { //start the camera instance
+	camera_load_config("blockz.conf");
+	camera_open();
+}
+
+void search_snapshot(channel) { //take picture and detect if block is present.
+
+camera_load_config("blockz.conf");
+	// update the camera
+    camera_update();
+	msleep(10);
+    // get the bounding box of the largest object in
+    // channel 0 (the red channel)
+	rectangle object_bounding_box = get_object_bbox(channel, 0);
+	if (object_bounding_box.width * object_bounding_box.height != 0){
+		printf("object seen!");
+		return true;
+	}
+
+	return false;
+
+}
+
 
 void read_sensors()
 {
