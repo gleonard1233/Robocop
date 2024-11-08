@@ -126,25 +126,40 @@ int main() {
     
     initialize_camera(); // Initialize camera for object detection
 
+int spin_counter = 0; // Initialize counter for spins
 #define GRIPPER_OPEN_POSITION 0
 #define GRIPPER_CLOSED_POSITION 1023
+
     while (true) {
+         if (spin_counter >= 30) {
+        stop(); // Stop the robot if counter reaches 30
+    }
         if (timer_elapsed()) {
             read_sensors();
+
             if (search_snapshot(0)) {
                 stop();
+
                 set_servo_position(GRIPPER_PIN, GRIPPER_OPEN_POSITION);
                 msleep(1000);
                 set_servo_position(GRIPPER_PIN, GRIPPER_CLOSED_POSITION);
 
             } else {
-                cruise_straight();
+                set_servo_position(GRIPPER_PIN, GRIPPER_OPEN_POSITION);
+
+                drive(1.0, -1.0, 0.5); // Rotate
+                spin_counter++; // Increase counter by 1
             }
         }
     }
     return 0;
 }
 
+
+
+void spin_search() {
+
+    }
 //========================================//
 //=============== PERCEPTION ==============//
 //========================================//
