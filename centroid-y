@@ -1,0 +1,232 @@
+/*
+Vassar Cognitive Science - Robot Ethology
+
+This program operates a kipr-link-based robot (equipped with analog photo, ir, and contact sensors) based on a subsumption hierarchy.
+It starts with specific hardcoded behaviors listed in the "subsumption_hierarchy" array. These behaviors can be edited using buttons.
+Pressing the side button randomizes the subsumption_hierarchy after the first button press, restoring the boot behavior on restart.
+
+Course:         211 - Perception & Action
+Instructors:    Ken Livingston
+Author:         RLJ <ryanjohns@vassar.edu> (GUI Version)
+Date:           August 2023
+Revisions:      Earlier version (2018) and revisions (2023) by Nick Livingston
+*/
+
+#include <kipr/wombat.h>  // KIPR Wombat native library
+#include <stdlib.h>       // General-purpose functions
+#include <stdbool.h>      // Boolean support
+
+// *** Define integer keys for each action type *** //
+#define SEEK_LIGHT_TYPE 0
+#define SEEK_DARK_TYPE 1
+#define APPROACH_TYPE 2
+#define AVOID_TYPE 3
+#define ESCAPE_F_TYPE 4
+#define ESCAPE_B_TYPE 5
+#define CRUISE_S_TYPE 6
+#define CRUISE_A_TYPE 7
+
+// *** Define PIN Addresses *** //
+#define RIGHT_IR_PIN 2
+#define LEFT_IR_PIN 3
+#define RIGHT_PHOTO_PIN 0
+#define LEFT_PHOTO_PIN 1
+
+#define FRONT_BUMP_LEFT_PIN 5
+#define FRONT_BUMP_CENTER_PIN 3
+#define FRONT_BUMP_RIGHT_PIN 4
+#define BACK_BUMP_LEFT_PIN 2
+#define BACK_BUMP_CENTER_PIN 0
+#define BACK_BUMP_RIGHT_PIN 1
+
+#define RIGHT_MOTOR_PIN 0
+#define LEFT_MOTOR_PIN 1
+#define GRIPPER_PIN 2
+
+// *** Behavior struct for type, rank, and active status *** //
+typedef struct behavior {
+    const char *title;
+    int type;
+    int rank;
+    bool is_active;
+} behavior;
+
+// Comparator for behavior sorting based on active status and rank
+int compare_ranks(const void *a, const void *b) {
+    bool is_active_a = ((behavior *)a)->is_active;
+    bool is_active_b = ((behavior *)b)->is_active;
+    if (is_active_a != is_active_b) {
+        return is_active_b - is_active_a;
+    }
+    return ((behavior *)a)->rank - ((behavior *)b)->rank;
+}
+
+//*************************************************** Function Declarations ***********************************************************//
+// PERCEPTION FUNCTIONS
+void read_sensors();                             
+bool is_above_distance_threshold(int threshold);
+bool is_above_photo_differential(int threshold);
+bool is_front_bump();
+bool is_back_bump();
+bool timer_elapsed();
+bool search_snapshot(int channel);               // Detects objects using the camera
+
+// ACTIONS
+void escape_front();
+void escape_back();
+void seek_light();
+void seek_dark();
+void avoid();
+void approach();
+void cruise_straight();
+void cruise_arc();
+void stop();
+
+// MOTOR CONTROL
+void drive(float left, float right, float delay_seconds);
+
+// HELPERS
+float map(float value, float start_range_low, float start_range_high, float target_range_low, float target_range_high);
+
+// *** Global Variables *** //
+int right_photo_value, left_photo_value, right_ir_value, left_ir_value;
+int front_bump_left_value, front_bump_center_value, front_bump_right_value;
+int back_bump_left_value, back_bump_center_value, back_bump_right_value;
+
+int avoid_threshold = 1600;
+int approach_threshold = 1600;
+int photo_threshold = 200;
+
+int timer_duration = 500;
+unsigned long start_time = 0;
+
+// Initial behavior hierarchy
+behavior subsumption_hierarchy[] = {
+    {"ESCAPE FRONT", ESCAPE_F_TYPE, 0, false},
+    {"ESCAPE BACK", ESCAPE_B_TYPE, 0, false},
+    {"AVOID", AVOID_TYPE, 0, true},
+    {"SEEK LIGHT", SEEK_LIGHT_TYPE, 0, false},
+    {"CRUISE STRAIGHT", CRUISE_S_TYPE, 0, true},
+    {"SEEK DARK", SEEK_DARK_TYPE, 0, false},
+    {"APPROACH", APPROACH_TYPE, 0, false},
+    {"CRUISE ARC", CRUISE_A_TYPE, 0, false}
+};
+int hierarchy_length;
+
+//==================================//
+//=============== MAIN ==============//
+//==================================//
+
+int main() {
+    hierarchy_length = sizeof(subsumption_hierarchy) / sizeof(behavior);
+    
+    enable_servo(LEFT_MOTOR_PIN);
+    enable_servo(RIGHT_MOTOR_PIN);
+    drive(0.0, 0.0, 1.0);
+    
+    initialize_camera(); // Initialize camera for object detection
+
+#define GRIPPER_OPEN_POSITION 0
+#define GRIPPER_CLOSED_POSITION 1023
+    while (true) {
+        if (timer_elapsed()) {
+            read_sensors();
+            if (search_snapshot(0)) {
+                stop();
+                set_servo_position(GRIPPER_PIN, GRIPPER_OPEN_POSITION);
+                msleep(1000);
+                set_servo_position(GRIPPER_PIN, GRIPPER_CLOSED_POSITION);
+
+            } else {
+                cruise_straight();
+            }
+        }
+    }
+    return 0;
+}
+
+//========================================//
+//=============== PERCEPTION ==============//
+//========================================//
+
+void initialize_camera() {
+    camera_load_config("blockz.conf");
+    camera_open();
+}
+
+bool search_snapshot(int channel) {
+    camera_update();
+    msleep(10);
+    point2 centroid = get_object_centroid(channel, 0);
+    rectangle object_bounding_box = get_object_bbox(channel, 0);
+    if (object_bounding_box.width * object_bounding_box.height != 0) {
+        printf("%d", centroid.y);
+        return true;
+    }
+    return false;
+}
+
+void read_sensors() {
+    right_photo_value = analog_et(RIGHT_PHOTO_PIN);
+    left_photo_value = analog_et(LEFT_PHOTO_PIN);
+    right_ir_value = analog_et(RIGHT_IR_PIN);
+    left_ir_value = analog_et(LEFT_IR_PIN);
+    front_bump_left_value = digital(FRONT_BUMP_LEFT_PIN);
+    front_bump_center_value = digital(FRONT_BUMP_CENTER_PIN);
+    front_bump_right_value = digital(FRONT_BUMP_RIGHT_PIN);
+    back_bump_left_value = digital(BACK_BUMP_LEFT_PIN);
+    back_bump_center_value = digital(BACK_BUMP_CENTER_PIN);
+    back_bump_right_value = digital(BACK_BUMP_RIGHT_PIN);
+}
+
+//====================================//
+//=============== ACTIONS =============//
+//====================================//
+
+void drive(float left, float right, float delay_seconds) {
+    float left_speed = map(left, -1.0, 1.0, 0, 2047);
+    float right_speed = map(right, -1.0, 1.0, 2047, 0);
+
+    timer_duration = (int)(delay_seconds * 1000);
+    start_time = systime();
+
+    set_servo_position(LEFT_MOTOR_PIN, left_speed);
+    set_servo_position(RIGHT_MOTOR_PIN, right_speed);
+}
+
+void cruise_straight() {
+    drive(0.5, 0.5, 0.25);
+}
+
+void stop() {
+    drive(0.0, 0.0, 0.25);
+}
+
+void escape_front() {
+    if (front_bump_left_value == 1 || front_bump_center_value == 1) {
+        drive(-0.08, -1, 2);
+    } else {
+        drive(-1, -0.08, 2);
+    }
+}
+
+void seek_light() {
+    int photo_difference = right_photo_value - left_photo_value;
+    if (photo_difference > 0) {
+        drive(-0.2, 0.2, 0.25);
+    } else if (photo_difference < 0) {
+        drive(0.2, -0.2, 0.25);
+    }
+}
+
+//=====================================//
+//=============== HELPERS ==============//
+//=====================================//
+
+bool timer_elapsed() {
+    return (systime() > (start_time + timer_duration));
+}
+
+float map(float value, float start_range_low, float start_range_high, float target_range_low, float target_range_high) {
+    return target_range_low + ((value - start_range_low) / (start_range_high - start_range_low)) * (target_range_high - target_range_low);
+}
