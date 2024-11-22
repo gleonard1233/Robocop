@@ -90,7 +90,7 @@ bool search_snapshot(int channel) {
 
 // Spin Search: Spins in a slight arc to search for objects
 void spin_search() {
-    drive(-0.2, 0.2, 0.25); // Drive in an arc to cover a search area
+    drive(-0.07, 0.07, 0.1); // Drive in an arc to cover a search area
 }
 
 // Approach Object: Drives forward until the object is no longer visible, then closes gripper
@@ -103,12 +103,15 @@ void approach_object() {
     msleep(1000); // Wait for the gripper to open
 
     while (search_snapshot(0)) {
-        drive(0.5, 0.5, 0.1); // Drive forward while object is visible
+        drive(0.2, 0.2, 0.1); // Drive forward while object is visible
     }
 
-    msleep(1000); // Wait for the gripper to open
+    msleep(2000); // Wait for the gripper to open
 
     set_servo_position(GRIPPER_PIN, GRIPPER_CLOSED_POSITION); // Close the gripper
+    
+    msleep(1000); // Wait for the gripper to open
+
 
     
 
