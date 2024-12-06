@@ -37,7 +37,6 @@
 int hierarchy_length;
 int timer_duration = 500;
 unsigned long start_time = 0;
-bool have_pollen = false;
 
 // Function Declarations
 void initialize_camera();
@@ -61,23 +60,10 @@ int main() {
     initialize_camera();
 
     while (true) {
-        if (!have_pollen) {
         if (timer_elapsed()) {
-            
             if (search_snapshot(0)) {
                 // Object detected, approach it
-                approach_object(0);
-
-        } else {
-                // No object detected, continue spinning search
-                spin_search();
-            }
-        }
-        }
-        else {
-            if (search_snapshot(1)) {
-                // Object detected, approach it
-                approach_drop();
+                approach_object();
 
         } else {
                 // No object detected, continue spinning search
@@ -108,7 +94,7 @@ void spin_search() {
 }
 
 // Approach Object: Drives forward until the object is no longer visible, then closes gripper
-void approach_object(channel) {
+void approach_object() {
     
     stop(); // Stop once the object is no longer visible
     
@@ -116,37 +102,18 @@ void approach_object(channel) {
 
     msleep(1000); // Wait for the gripper to open
 
-    while (search_snapshot(channel)) {
+    while (search_snapshot(0)) {
         drive(0.2, 0.2, 0.1); // Drive forward while object is visible
     }
 
     msleep(2000); // Wait for the gripper to open
 
     set_servo_position(GRIPPER_PIN, GRIPPER_CLOSED_POSITION); // Close the gripper
-
-    have_pollen = true;
     
     msleep(1000); // Wait for the gripper to open
 
-}
 
-void approach_drop() {
     
-    stop(); // Stop once the object is no longer visible
-    
-    while (search_snapshot(1)) {
-        drive(0.2, 0.2, 0.1); // Drive forward while object is visible
-    }
-
-    msleep(2000); // Wait for the gripper to open
-
-    set_servo_position(GRIPPER_PIN, GRIPPER_OPEN_POSITION); // Close the gripper
-
-    have_pollen = false;
-    
-    msleep(1000); // Wait for the gripper to open
-
-    drive(-1.0, -1.0, 0.2);
 
 }
 
