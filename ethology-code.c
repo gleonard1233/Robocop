@@ -99,12 +99,15 @@ bool search_snapshot(int channel) {
     camera_update();
     msleep(10);
     int object_count = get_object_count(channel);
+    if (object_count > 0){
+        printf("found");
+    }
     return object_count > 0; // Return true if any object is detected
 }
 
 // Spin Search: Spins in a slight arc to search for objects
 void spin_search() {
-    drive(-0.07, 0.07, 0.1); // Drive in an arc to cover a search area
+    drive(-0.07, 0.05, 0.002); // Drive in an arc to cover a search area
 }
 
 // Approach Object: Drives forward until the object is no longer visible, then closes gripper
@@ -117,10 +120,12 @@ void approach_object(channel) {
     msleep(1000); // Wait for the gripper to open
 
     while (search_snapshot(channel)) {
-        drive(0.2, 0.2, 0.1); // Drive forward while object is visible
+        forward(); // Drive forward while object is visible
+        msleep(200);
     }
-
-    msleep(2000); // Wait for the gripper to open
+  
+    
+    msleep(1000);
 
     set_servo_position(GRIPPER_PIN, GRIPPER_CLOSED_POSITION); // Close the gripper
 
@@ -135,10 +140,13 @@ void approach_drop() {
     stop(); // Stop once the object is no longer visible
     
     while (search_snapshot(1)) {
-        drive(0.2, 0.2, 0.1); // Drive forward while object is visible
+        forward(); // Drive forward while object is visible
+        msleep(200);
     }
+    
+    stop();
 
-    msleep(2000); // Wait for the gripper to open
+    msleep(1000); // Wait for the gripper to open
 
     set_servo_position(GRIPPER_PIN, GRIPPER_OPEN_POSITION); // Close the gripper
 
@@ -154,6 +162,15 @@ void approach_drop() {
 // Stop: Stops the robot
 void stop() {
     drive(0.0, 0.0, 0.25);
+}
+
+void stop_plain() {
+    set_servo_position(LEFT_MOTOR_PIN, 0);
+    set_servo_position(RIGHT_MOTOR_PIN, 0);
+}
+void forward() {
+    set_servo_position(LEFT_MOTOR_PIN, 1500);
+    set_servo_position(RIGHT_MOTOR_PIN, 750);
 }
 
 // Drive Function: Controls motor speeds
