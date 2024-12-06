@@ -49,6 +49,9 @@ void drive(float left, float right, float delay_seconds);
 bool timer_elapsed();
 float map(float value, float start_range_low, float start_range_high, float target_range_low, float target_range_high);
 
+int spiral_length = 1; // Length of the forward movement, increases over time
+int spin_count = 0; // Global variable to track the number of spins
+
 // Main Function
 int main() {    
     enable_servo(LEFT_MOTOR_PIN);
@@ -61,30 +64,32 @@ int main() {
     initialize_camera();
 
     while (true) {
-        if (!have_pollen) {
+    if (!have_pollen) {
         if (timer_elapsed()) {
-            
             if (search_snapshot(0)) {
                 // Object detected, approach it
                 approach_object(0);
-
-        } else {
-                // No object detected, continue spinning search
+            } else {
                 spin_search();
+
+                // If the robot spins 2 times, drive forward and reset
+                if (spin_count >= 5) {
+                    stop();
+                    drive(0.3, 0.3, spiral_length); // Drive forward
+                    spiral_length++;               // Increase spiral search area
+                    spin_count = 0;                // Reset spin counter
+                }
             }
         }
-        }
-        else {
-            if (search_snapshot(1)) {
-                // Object detected, approach it
-                approach_drop();
-
+    } else {
+        if (search_snapshot(1)) {
+            // Object detected, approach it
+            approach_drop();
         } else {
-                // No object detected, continue spinning search
-                spin_search();
-            }
+            spin_search();
         }
     }
+}
     return 0;
 }
 
@@ -106,10 +111,18 @@ bool search_snapshot(int channel) {
 }
 
 // Spin Search: Spins in a slight arc to search for objects
-void spin_search() {
-    drive(-0.07, 0.05, 0.002); // Drive in an arc to cover a search area
-}
 
+
+void spin_search() {
+    static float total_angle = 0.0; // Tracks cumulative spin angle
+    drive(-0.07, 0.07, 0.065);       // Slight arc for searching
+    total_angle += 0.05 * 360;      // Approximate angle based on motion
+
+    if (total_angle >= 360.0) { // One full spin completed
+        total_angle = 0.0;     // Reset for next spin
+        spin_count++;          // Increment spin count
+    }
+}
 // Approach Object: Drives forward until the object is no longer visible, then closes gripper
 void approach_object(channel) {
     
