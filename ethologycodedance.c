@@ -39,8 +39,7 @@ int hierarchy_length;
 int timer_duration = 500;
 unsigned long start_time = 0;
 bool have_pollen = false;
-unsigned long no_pollen_timer = 0; // Timer to track time spent without finding pollen
-
+unsigned long no_pollen_timer = systime(); // Timer to track time spent without finding pollen
 // Function Declarations
 void initialize_camera();
 bool search_snapshot(int channel);
