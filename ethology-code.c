@@ -1,6 +1,7 @@
 #include <kipr/wombat.h>  // KIPR Wombat native library
 #include <stdlib.h>       // General-purpose functions
 #include <stdbool.h>      // Boolean support
+#include <math.h>
 
 // Define integer keys for each action type
 #define SEEK_LIGHT_TYPE 0
@@ -49,6 +50,9 @@ void drive(float left, float right, float delay_seconds);
 bool timer_elapsed();
 float map(float value, float start_range_low, float start_range_high, float target_range_low, float target_range_high);
 
+int spiral_length = 1; // Length of the forward movement, increases over time
+int spin_count = 0; // Global variable to track the number of spins
+
 // Main Function
 int main() {    
     enable_servo(LEFT_MOTOR_PIN);
@@ -61,13 +65,17 @@ int main() {
     initialize_camera();
 
     while (true) {
-        if (!have_pollen) {
         if (timer_elapsed()) {
-            
+         if (is_pollinated()) {
+                // Object detected, approach it
+                printf("pollinated!!");
+                // No object detected, continue spinning search
+                spin_search();
+        } else {
+        if (!have_pollen) {
             if (search_snapshot(0)) {
                 // Object detected, approach it
                 approach_object(0);
-
         } else {
                 // No object detected, continue spinning search
                 spin_search();
@@ -78,12 +86,12 @@ int main() {
             if (search_snapshot(1)) {
                 // Object detected, approach it
                 approach_drop();
-
         } else {
                 // No object detected, continue spinning search
                 spin_search();
             }
         }
+    }
     }
     return 0;
 }
@@ -103,6 +111,36 @@ bool search_snapshot(int channel) {
         printf("found");
     }
     return object_count > 0; // Return true if any object is detected
+}
+// Is pollinated Boolean loop
+bool is_pollinated() {
+    camera_update();
+    msleep(10);
+
+    int red_count = get_object_count(0);
+    int blue_count = get_object_count(1);
+
+    if (red_count + blue_count < 1){
+        return false;
+    }
+
+    int redx  = (get_object_centroid(0, 0)).x ;
+    int redy  = (get_object_centroid(0, 0)).y ;
+    int bluex  = (get_object_centroid(1, 0)).x ;
+    int bluey  = (get_object_centroid(1, 0)).y ;
+    
+    int x = redx - bluex;
+    int y = redy - bluey;
+    
+    float dist = sqrt( pow(x, 2) + pow(y, 2) );
+    
+    if (dist < 80){
+        printf("%d/n", dist);
+        printf("nearby");
+        return true;
+    }
+    
+    
 }
 
 // Spin Search: Spins in a slight arc to search for objects
