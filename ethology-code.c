@@ -49,6 +49,9 @@ void stop();
 void drive(float left, float right, float delay_seconds);
 bool timer_elapsed();
 float map(float value, float start_range_low, float start_range_high, float target_range_low, float target_range_high);
+bool is_pollinated();
+void approach_drop();
+void forward();
 
 int spiral_length = 1; // Length of the forward movement, increases over time
 int spin_count = 0; // Global variable to track the number of spins
@@ -71,18 +74,17 @@ int main() {
                 printf("pollinated!!");
                 // No object detected, continue spinning search
                 spin_search();
-        } else {
-        if (!have_pollen) {
+        } 
+        else if (!have_pollen) {
+
             if (search_snapshot(0)) {
                 // Object detected, approach it
                 approach_object(0);
-        } else {
+            } else {
                 // No object detected, continue spinning search
                 spin_search();
             }
-        }
-        }
-        else {
+        } else {
             if (search_snapshot(1)) {
                 // Object detected, approach it
                 approach_drop();
@@ -134,11 +136,12 @@ bool is_pollinated() {
     
     float dist = sqrt( pow(x, 2) + pow(y, 2) );
     
-    if (dist < 80){
-        printf("%d/n", dist);
+ 		if (dist < 30){
         printf("nearby");
         return true;
     }
+    
+    return false;
     
     
 }
