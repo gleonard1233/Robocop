@@ -39,6 +39,7 @@ int hierarchy_length;
 int timer_duration = 500;
 unsigned long start_time = 0;
 bool have_pollen = false;
+unsigned long no_pollen_timer = 0; // Timer to track time spent without finding pollen
 
 // Function Declarations
 void initialize_camera();
@@ -52,6 +53,7 @@ float map(float value, float start_range_low, float start_range_high, float targ
 bool is_pollinated();
 void approach_drop();
 void forward();
+void dance(); // Function for the dance
 
 int spiral_length = 1; // Length of the forward movement, increases over time
 int spin_count = 0; // Global variable to track the number of spins

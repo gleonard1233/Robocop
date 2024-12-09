@@ -50,7 +50,9 @@ void stop();
 void drive(float left, float right, float delay_seconds);
 bool timer_elapsed();
 float map(float value, float start_range_low, float start_range_high, float target_range_low, float target_range_high);
-bool timer_elapsed();
+bool is_pollinated();
+void approach_drop();
+void forward();
 void dance(); // Function for the dance
 
 int spiral_length = 1; // Length of the forward movement, increases over time
@@ -69,38 +71,36 @@ int main() {
 
     while (true) {
         if (timer_elapsed()) {
-         if (systime() - no_pollen_timer > 30000) { // Check if 30 seconds have passed without detecting pollen
-                        stop();
-                        dance(); // Perform the dance
-                        no_pollen_timer = systime(); // Reset timer after dance
+             if (systime() - no_pollen_timer > 30000) { // Check if 30 seconds have passed without detecting pollen
+                stop();
+                dance(); // Perform the dance
+                no_pollen_timer = systime(); // Reset timer after dance
                     } else{
-         if (is_pollinated()) {
-                // Object detected, approach it
-                printf("pollinated!!");
-                // No object detected, continue spinning search
-                spin_search();
-        } else {
-        if (!have_pollen) {
-            if (search_snapshot(0)) {
-                // Object detected, approach it
-                approach_object(0);
-        } else {
-                // No object detected, continue spinning search
-                spin_search();
+                      if (is_pollinated()) {
+                        // Object detected, approach it
+                        printf("pollinated!!");
+                        // No object detected, continue spinning search
+                        spin_search();
+                    } 
+                    else if (!have_pollen) {
+                      if (search_snapshot(0)) {
+                        // Object detected, approach it
+                        approach_object(0);
+                    } else {
+                        // No object detected, continue spinning search
+                        spin_search();
+                    }
+                    } else {
+                        if (search_snapshot(1)) {
+                        // Object detected, approach it
+                        approach_drop();
+                     } else {
+                        // No object detected, continue spinning search
+                        spin_search();
+                    }
+                }
             }
         }
-        }
-        else {
-            if (search_snapshot(1)) {
-                // Object detected, approach it
-                approach_drop();
-        } else {
-                // No object detected, continue spinning search
-                spin_search();
-            }
-        }
-        }
-    }
     }
     return 0;
 }
@@ -143,13 +143,37 @@ bool is_pollinated() {
     
     float dist = sqrt( pow(x, 2) + pow(y, 2) );
     
-    if (dist < 80){
-        printf("%d/n", dist);
+ 		if (dist < 30){
         printf("nearby");
         return true;
     }
     
+    return false;
     
+    
+}
+
+// Dance: Perform a dance by alternating motor movements
+void dance() {
+    unsigned long dance_start = systime(); // Track the start time of the dance
+    while (systime() - dance_start < 10000) { // Dance for 10 seconds
+        // Move left wheel forward, right wheel backward (spin in place)
+        drive(0.2, -0.2, 0.5);  // 0.5 seconds of movement
+        msleep(500);  // Pause for 0.5 seconds
+        // Move right wheel forward, left wheel backward (spin in place)
+        drive(-0.2, 0.2, 0.5);  // 0.5 seconds of movement
+        msleep(500);  // Pause for 0.5 seconds
+        drive(0.2, -0.2, 0.5);  // 0.5 seconds of movement
+        msleep(500);  // Pause for 0.5 seconds
+        // Move right wheel forward, left wheel backward (spin in place)
+        drive(-0.2, 0.2, 0.5);  // 0.5 seconds of movement
+        msleep(500);  // Pause for 0.5 seconds
+        drive(0.2, -0.2, 0.5);  // 0.5 seconds of movement
+        msleep(500);  // Pause for 0.5 seconds
+        // Move right wheel forward, left wheel backward (spin in place)
+        drive(-0.2, 0.2, 0.5);  // 0.5 seconds of movement
+        msleep(500);  // Pause for 0.5 seconds
+    }
 }
 
 // Spin Search: Spins in a slight arc to search for objects
@@ -180,22 +204,6 @@ void approach_object(channel) {
     
     msleep(1000); // Wait for the gripper to open
 
-}
-
-// Dance: Perform a dance by alternating motor movements
-void dance() {
-    unsigned long dance_start = systime(); // Track the start time of the dance
-    while (systime() - dance_start < 10000) { // Dance for 10 seconds
-        // Move left wheel forward, right wheel backward (spin in place)
-        drive(0.2, -0.2, 0.5);  // 0.5 seconds of movement
-        stop();
-        msleep(500);  // Pause for 0.5 seconds
-
-        // Move right wheel forward, left wheel backward (spin in place)
-        drive(-0.2, 0.2, 0.5);  // 0.5 seconds of movement
-        stop();
-        msleep(500);  // Pause for 0.5 seconds
-    }
 }
 
 void approach_drop() {
