@@ -45,6 +45,7 @@ void initialize_camera();
 bool search_snapshot(int channel);
 void spin_search();
 void approach_object();
+bool is_pollinated();
 void stop();
 void drive(float left, float right, float delay_seconds);
 bool timer_elapsed();
@@ -70,12 +71,14 @@ int main() {
             if (is_pollinated()) {
                 // Object detected, approach it
                 printf("pollinated!!");
+                stop();
 
         } else {
                 // No object detected, continue spinning search
                 spin_search();
             }
         }
+    }
     }
     return 0;
 }
@@ -88,10 +91,14 @@ void initialize_camera() {
 
 // Search Snapshot: Detects objects using the camera
 bool search_snapshot(int channel) {
+    
     camera_update();
+    
     msleep(10);
+    
     int object_count = get_object_count(channel);
-    if (object_count > 0){
+    
+    if (object_count > 0) {
         printf("found");
     }
     return object_count > 0; // Return true if any object is detected
@@ -118,11 +125,12 @@ bool is_pollinated() {
     
     float dist = sqrt( pow(x, 2) + pow(y, 2) );
     
-    if (dist < 80){
-        printf("%d/n", dist);
+    if (dist < 30){
         printf("nearby");
         return true;
     }
+    
+    return false;
     
     
 }
