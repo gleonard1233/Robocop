@@ -39,7 +39,6 @@ int hierarchy_length;
 int timer_duration = 500;
 unsigned long start_time = 0;
 bool have_pollen = false;
-unsigned long no_pollen_timer = 0; // Timer to track time spent without finding pollen
 
 // Function Declarations
 void initialize_camera();
@@ -64,6 +63,7 @@ int main() {
     enable_servo(RIGHT_MOTOR_PIN);
     enable_servo(GRIPPER_PIN);
 
+    unsigned long no_pollen_timer = systime(); // Timer to track time spent without finding pollen
    
     drive(0.0, 0.0, 1.0);
     
@@ -71,31 +71,36 @@ int main() {
 
     while (true) {
         if (timer_elapsed()) {
-         if (is_pollinated()) {
-                // Object detected, approach it
-                printf("pollinated!!");
-                // No object detected, continue spinning search
-                spin_search();
-        } 
-        else if (!have_pollen) {
-
-            if (search_snapshot(0)) {
-                // Object detected, approach it
-                approach_object(0);
-            } else {
-                // No object detected, continue spinning search
-                spin_search();
-            }
-        } else {
-            if (search_snapshot(1)) {
-                // Object detected, approach it
-                approach_drop();
-        } else {
-                // No object detected, continue spinning search
-                spin_search();
+             if (systime() - no_pollen_timer > 30000) { // Check if 30 seconds have passed without detecting pollen
+                stop();
+                dance(); // Perform the dance
+                no_pollen_timer = systime(); // Reset timer after dance
+                    } else{
+                      if (is_pollinated()) {
+                        // Object detected, approach it
+                        printf("pollinated!!");
+                        // No object detected, continue spinning search
+                        spin_search();
+                    } 
+                    else if (!have_pollen) {
+                      if (search_snapshot(0)) {
+                        // Object detected, approach it
+                        approach_object(0);
+                    } else {
+                        // No object detected, continue spinning search
+                        spin_search();
+                    }
+                    } else {
+                        if (search_snapshot(1)) {
+                        // Object detected, approach it
+                        approach_drop();
+                     } else {
+                        // No object detected, continue spinning search
+                        spin_search();
+                    }
+                }
             }
         }
-    }
     }
     return 0;
 }
@@ -146,6 +151,29 @@ bool is_pollinated() {
     return false;
     
     
+}
+
+// Dance: Perform a dance by alternating motor movements
+void dance() {
+    unsigned long dance_start = systime(); // Track the start time of the dance
+    while (systime() - dance_start < 10000) { // Dance for 10 seconds
+        // Move left wheel forward, right wheel backward (spin in place)
+        drive(0.2, -0.2, 0.5);  // 0.5 seconds of movement
+        msleep(500);  // Pause for 0.5 seconds
+        // Move right wheel forward, left wheel backward (spin in place)
+        drive(-0.2, 0.2, 0.5);  // 0.5 seconds of movement
+        msleep(500);  // Pause for 0.5 seconds
+        drive(0.2, -0.2, 0.5);  // 0.5 seconds of movement
+        msleep(500);  // Pause for 0.5 seconds
+        // Move right wheel forward, left wheel backward (spin in place)
+        drive(-0.2, 0.2, 0.5);  // 0.5 seconds of movement
+        msleep(500);  // Pause for 0.5 seconds
+        drive(0.2, -0.2, 0.5);  // 0.5 seconds of movement
+        msleep(500);  // Pause for 0.5 seconds
+        // Move right wheel forward, left wheel backward (spin in place)
+        drive(-0.2, 0.2, 0.5);  // 0.5 seconds of movement
+        msleep(500);  // Pause for 0.5 seconds
+    }
 }
 
 // Spin Search: Spins in a slight arc to search for objects
