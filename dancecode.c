@@ -24,8 +24,9 @@ void dance() {
 
 
  // Check if 30 seconds have passed without detecting pollen (add within main function after spincount)
-                    if (systime() - no_pollen_timer > 30000) { // 30 seconds
+                    if (systime() - no_pollen_timer > 30000) { // Check if 30 seconds have passed without detecting pollen
                         stop();
                         dance(); // Perform the dance
                         no_pollen_timer = systime(); // Reset timer after dance
                     }
+                     } else {
