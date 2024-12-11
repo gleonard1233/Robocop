@@ -109,6 +109,8 @@ while (true) {
                         if (search_snapshot(0)) {
                             // Object detected, approach it
                             approach_object(0);
+                            no_pollen_timer = systime();
+                            
                         } else {
                             // No object detected, continue spinning search
                             spin_search();
@@ -117,6 +119,8 @@ while (true) {
                         if (search_snapshot(1)) {
                             // Object detected, approach it
                             approach_drop();
+                            no_pollen_timer = systime();
+
                         } else {
                             // No object detected, continue spinning search
                             spin_search();
@@ -219,6 +223,7 @@ void approach_object(channel) {
         forward(); // Drive forward while object is visible
         msleep(200);
     }
+    stop();
     msleep(1000);
     set_servo_position(GRIPPER_PIN, GRIPPER_CLOSED_POSITION); // Close the gripper
     msleep(1000); // Wait for the gripper to close
