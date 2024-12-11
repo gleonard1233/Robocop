@@ -25,10 +25,14 @@
 #define RIGHT_MOTOR_PIN 0
 #define LEFT_MOTOR_PIN 1
 #define GRIPPER_PIN 2
+#define LIFTER_PIN 3
 
 // Define gripper positions
 #define GRIPPER_OPEN_POSITION 0
 #define GRIPPER_CLOSED_POSITION 1023
+
+#define LIFTER_DOWN_POSITION 2030
+#define LIFTER_UP_POSITION 0
 
 // Global Variables
 int hierarchy_length;
@@ -40,7 +44,7 @@ bool have_pollen = false;
 int right_ir_value, left_ir_value, back_bump_left_value, back_bump_center_value, back_bump_right_value;
 
 // threshold values
-int avoid_threshold = 1600;	   // the absolute difference between IR readings has to be above this for the avoid action
+int avoid_threshold = 6000;	   // the absolute difference between IR readings has to be above this for the avoid action
 
 // Function Declarations
 void initialize_camera();
@@ -72,6 +76,7 @@ int main() {
     enable_servo(LEFT_MOTOR_PIN);
     enable_servo(RIGHT_MOTOR_PIN);
     enable_servo(GRIPPER_PIN);
+    enable_servo (LIFTER_PIN);
 
     unsigned long no_pollen_timer = systime(); // Timer to track time spent without finding pollen
    
@@ -206,6 +211,8 @@ void spin_search() {
 // Approach Object: Drives forward until the object is no longer visible, then closes gripper
 void approach_object(channel) {
     stop(); // Stop once the object is no longer visible
+    set_servo_position(LIFTER_PIN,LIFTER_DOWN_POSITION);
+    msleep(1000);
     set_servo_position(GRIPPER_PIN, GRIPPER_OPEN_POSITION); // Open the gripper
     msleep(1000); // Wait for the gripper to open
     while (search_snapshot(channel)) {
@@ -214,8 +221,11 @@ void approach_object(channel) {
     }
     msleep(1000);
     set_servo_position(GRIPPER_PIN, GRIPPER_CLOSED_POSITION); // Close the gripper
+    msleep(1000); // Wait for the gripper to close
+    set_servo_position(LIFTER_PIN, LIFTER_UP_POSITION);
+    msleep(1000); 
     have_pollen = true;
-    msleep(1000); // Wait for the gripper to open
+
 }
 
 void approach_drop() {
@@ -228,7 +238,9 @@ void approach_drop() {
     msleep(1000); // Wait for the gripper to open
     set_servo_position(GRIPPER_PIN, GRIPPER_OPEN_POSITION); // Close the gripper
     have_pollen = false;  
-    msleep(1000); // Wait for the gripper to open
+    msleep(1000); // Wait for the gripper to close
+    set_servo_position(LIFTER_PIN, LIFTER_UP_POSITION);
+    msleep(1000);
     drive(-1.0, -1.0, 0.2);
 }
 
