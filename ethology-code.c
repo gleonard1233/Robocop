@@ -107,7 +107,7 @@ while (true) {
                         printf("pollinated!!");
                         spin_search(); // No object detected, continue spinning search
                          // If the robot spins 2 times, drive forward and reset
-                if (spin_count >= 5) {
+                if (spin_count >= 7) {
                     stop();
                     drive(0.3, 0.3, spiral_length); // Drive forward
                     spiral_length++;               // Increase spiral search area
@@ -123,7 +123,7 @@ while (true) {
                             // No object detected, continue spinning search
                             spin_search();
                              // If the robot spins 2 times, drive forward and reset
-                if (spin_count >= 5) {
+                if (spin_count >= 7) {
                     stop();
                     drive(0.3, 0.3, spiral_length); // Drive forward
                     spiral_length++;               // Increase spiral search area
@@ -140,7 +140,7 @@ while (true) {
                             // No object detected, continue spinning search
                             spin_search();
                              // If the robot spins 2 times, drive forward and reset
-                if (spin_count >= 5) {
+                if (spin_count >= 7) {
                     stop();
                     drive(0.3, 0.3, spiral_length); // Drive forward
                     spiral_length++;               // Increase spiral search area
@@ -176,6 +176,51 @@ bool search_snapshot(int channel) {
     }
     return object_count > 0; // Return true if any object is detected
 }
+
+// Function to wait for the object to be centered in the camera's view
+void wait_for_centered_object(int channel) {
+    camera_update();
+    msleep(10); // Small delay for camera update
+    
+    int object_count = get_object_count(channel);
+    if (object_count == 0) {
+        // No object detected, return
+        return;
+    }
+
+    // Define the center of the camera's view (in pixels)
+    int center_x = 80; // Assuming the camera resolution is 320x240 (center is 160 on x-axis)
+
+    // Define a threshold for being "centered"
+    int threshold = 35;  // Tolerance for being centered (±20 pixels)
+    
+    while (true) {
+        camera_update();  // Continuously update the camera
+		msleep(10);
+        // Get the x-coordinate of the first detected object (assuming one object detected)
+        int object_x = get_object_centroid(channel, 0).x;
+
+        // Check if the object is within the centered threshold
+        if (object_x >= (center_x - threshold) && object_x <= (center_x + threshold)) {
+            // If the object is centered, break the loop and exit
+            printf("x: %d", object_x);
+            break;
+        } else {
+            // Otherwise, move the robot to center the object
+            if (object_x < center_x - threshold) {
+                // Move left to center the object
+                drive(-0.07, 0.07, 0.1);
+                msleep(10);
+            } else if (object_x > center_x + threshold) {
+                // Move right to center the object
+                drive(0.07, -0.07, 0.1);
+                msleep(10);
+            }
+            msleep(10); // Small delay to avoid excessive updates
+        }
+    }
+}
+
 
 // Is pollinated Boolean loop : checks if the flower the camera sees has pollen on it
 bool is_pollinated() {
@@ -244,6 +289,9 @@ void spin_search() {
 // Approach Object: Drives forward until the object is no longer visible, then closes gripper
 void approach_object(channel) {
     stop(); // Stop once the object is no longer visible
+    wait_for_centered_object(channel);  // This function will block until the object is centered
+    stop();
+    msleep(1000);
     set_servo_position(LIFTER_PIN,LIFTER_DOWN_POSITION);
     msleep(1000);
     set_servo_position(GRIPPER_PIN, GRIPPER_OPEN_POSITION); // Open the gripper
@@ -264,7 +312,11 @@ void approach_object(channel) {
 
 void approach_drop() {
         stop(); // Stop once the object is no longer visible
-        while (search_snapshot(1)) {
+    
+    wait_for_centered_object(1);
+    stop();
+    msleep(1000);
+    while (search_snapshot(1)) {
         forward(); // Drive forward while object is visible
         msleep(200);
     }
@@ -289,7 +341,7 @@ void stop_plain() {
 }
 void forward() {
     set_servo_position(LEFT_MOTOR_PIN, 1500);
-    set_servo_position(RIGHT_MOTOR_PIN, 750);
+    set_servo_position(RIGHT_MOTOR_PIN, 880);
 }
 
 //Avoid function
