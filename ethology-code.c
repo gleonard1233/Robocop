@@ -65,6 +65,7 @@ bool is_back_bump();							 // return true if one of the back bumpers was hit
 void escape_back(); //initialize escape back function
 void avoid(); //initialize avoid function
 
+//Used for spin seach function
 int spiral_length = 1; // Length of the forward movement, increases over time
 int spin_count = 0; // Global variable to track the number of spins
 
@@ -105,6 +106,13 @@ while (true) {
                         // Object detected, approach it
                         printf("pollinated!!");
                         spin_search(); // No object detected, continue spinning search
+                         // If the robot spins 2 times, drive forward and reset
+                if (spin_count >= 5) {
+                    stop();
+                    drive(0.3, 0.3, spiral_length); // Drive forward
+                    spiral_length++;               // Increase spiral search area
+                    spin_count = 0;                // Reset spin counter
+                }
                     } else if (!have_pollen) {
                         if (search_snapshot(0)) {
                             // Object detected, approach it
@@ -114,6 +122,13 @@ while (true) {
                         } else {
                             // No object detected, continue spinning search
                             spin_search();
+                             // If the robot spins 2 times, drive forward and reset
+                if (spin_count >= 5) {
+                    stop();
+                    drive(0.3, 0.3, spiral_length); // Drive forward
+                    spiral_length++;               // Increase spiral search area
+                    spin_count = 0;                // Reset spin counter
+                }
                         }
                     } else {
                         if (search_snapshot(1)) {
@@ -124,6 +139,13 @@ while (true) {
                         } else {
                             // No object detected, continue spinning search
                             spin_search();
+                             // If the robot spins 2 times, drive forward and reset
+                if (spin_count >= 5) {
+                    stop();
+                    drive(0.3, 0.3, spiral_length); // Drive forward
+                    spiral_length++;               // Increase spiral search area
+                    spin_count = 0;                // Reset spin counter
+                }
                         }
                     }
                 }
@@ -207,9 +229,16 @@ void dance() {
     }
 }
 
-// Spin Search: Spins in a slight arc to search for objects
+// Spin Search
 void spin_search() {
-    drive(-0.07, 0.05, 0.002); // Drive in an arc to cover a search area
+    static float total_angle = 0.0; // Tracks cumulative spin angle
+    drive(-0.07, 0.07, 0.1);       // Slight arc for searching
+    total_angle += 0.1 * 360;      // Approximate angle based on motion
+
+    if (total_angle >= 360.0) { // One full spin completed
+        total_angle = 0.0;     // Reset for next spin
+        spin_count++;          // Increment spin count
+    }
 }
 
 // Approach Object: Drives forward until the object is no longer visible, then closes gripper
